@@ -22,9 +22,10 @@ int main() {
 
   char filenamesrc[50] = "\0";
   char filenamedest[50] = "\0";
+  char filenameindice[50] = "\0";
   char tmp[50] = "\0";
 
-  s_file_t *filesrc = NULL, *filedest = NULL;
+  s_file_t *filesrc = NULL, *filedest = NULL, *fileindice = NULL;
   db_t *db = NULL, *searchResult = NULL;
   header_t *header = NULL;
   dataReg_t *registro = NULL;
@@ -32,6 +33,7 @@ int main() {
   int nRegistros = 0;
   BTreeHeader_t *Btreeheader = NULL;
   
+  ll RegReference = -1; 
   char searchfieldname[30] = "\0";
   char find_key[100] = "\0";
 
@@ -425,6 +427,69 @@ int main() {
     else{
       printf("Falha no processamento do arquivo.");
     }
+    break;
+  }
+  case 15:{
+    break;
+  }
+  case 16:{
+    scanf("%s", filenamesrc);
+    scanf("%s", filenamedest);
+    fgets(tmp, 19, stdin);
+    scanf("%s", filenameindice);
+
+    filesrc = openfile(filenamesrc, "rb+");
+    filedest = openfile(filenamedest, "rb+");
+    fileindice = openfile(filenameindice, "rb+");
+
+    if (filesrc == NULL || filesrc->fp == NULL || filesrc->consistenciaDoArquivo == '0' || filedest == NULL || filedest->fp == NULL || filedest->consistenciaDoArquivo == '0' || fileindice == NULL || fileindice->fp == NULL || fileindice->consistenciaDoArquivo == '0')
+    {
+      return 0;
+    }
+
+    header = readHeaderfromBIN(filedest);
+
+    Btreeheader = BtreeCreate(fileindice);
+
+    int cont = 0;
+    int regnum = checkRegnum(filesrc->fp);
+    fseek(filesrc->fp, 175, SEEK_SET); //vamos para o começo dos registros
+
+    dataReg_t *registroLinha = NULL;
+
+    int nMatchedRegisters = 0;
+    while (cont < regnum)
+    {
+      regv_t *registro = get_reg_bin(filesrc->fp); //coletamos o registro
+      if (registro->removido == '1')
+      {
+        RegReference = SearchInBTree(Btreeheader->noRaiz, registro->codLinha, fileindice);
+        if(RegReference != NIL){
+          fseek(filedest->fp, RegReference, SEEK_SET);
+          registroLinha = readRegfromBIN(filedest);
+          printReg(*registro);
+          printRegistro(header, registroLinha);
+          printf("\n");
+          free(registroLinha);
+          registroLinha = NULL;
+          nMatchedRegisters++;
+        }
+        free(registro);
+        registro = NULL;
+        cont++;
+      }
+    }
+    if(nMatchedRegisters == 0) printf("Registro Inexistente.\n");
+
+    break;
+  }
+  case 17:{
+    break;
+  }
+  case 18:{
+    break;
+  }
+  case 19:{
     break;
   }
   default:
