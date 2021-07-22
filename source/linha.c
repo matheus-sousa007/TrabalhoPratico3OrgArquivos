@@ -305,7 +305,7 @@ header_t *readHeaderfromBIN(s_file_t *dataFile) {
   header_t *header = (header_t *)calloc(1, sizeof(header_t));
   // Lendo o header do binário
   header->status = '0';
-  printf("%ld\n", ftell(dataFile->fp));
+  //printf("%ld\n", ftell(dataFile->fp));
   checkNotEOF = fread(&header->byteProxReg, sizeof(ll), 1, dataFile->fp);
   checkNotEOF = fread(&header->nroRegistros, sizeof(int), 1, dataFile->fp);
   checkNotEOF = fread(&header->nroRegRemovidos, sizeof(int), 1, dataFile->fp);
@@ -379,6 +379,8 @@ db_t *readDBfromBIN(s_file_t *dataFile) {
     return NULL;
   }
 
+  fseek(dataFile->fp, 0, SEEK_SET);
+
   db_t *db = (db_t *)calloc(1, sizeof(db_t));
   // Lendo o header do binário
   db->header = readHeaderfromBIN(dataFile);
@@ -390,8 +392,10 @@ db_t *readDBfromBIN(s_file_t *dataFile) {
   // Lendo os registros
   int pos = 0;
   while ((tmp = readRegfromBIN(dataFile)) != NULL) {
-    db->Regdatabase[pos] = tmp;
-    pos++;
+    if(tmp->removido == '1'){
+      db->Regdatabase[pos] = tmp;
+      pos++;
+    }
   }
   if (pos == 0) {
     free(db->header);
@@ -594,6 +598,15 @@ void printRegistro(header_t *header, dataReg_t *registro){
       printf("PAGAMENTO EM CARTAO SOMENTE NO FINAL DE SEMANA\n");
       break;
     }
-    printf("\n");
+    //printf("\n");
   }
+}
+
+int comparaRegistro(const void *elem1, const void *elem2)
+{
+  int CodLinharegistro1 = ((dataReg_t *) elem1)->codLinha;
+  int CodLinharegistro2 = ((dataReg_t *) elem2)->codLinha;
+  if(CodLinharegistro1 < CodLinharegistro2) return 1;
+  if(CodLinharegistro1 > CodLinharegistro2) return -1;
+  return 0;
 }

@@ -439,17 +439,16 @@ int main() {
     scanf("%s", filenameindice);
 
     filesrc = openfile(filenamesrc, "rb+");
+    if (filesrc == NULL || filesrc->fp == NULL || filesrc->consistenciaDoArquivo == '0') return 0;
     filedest = openfile(filenamedest, "rb+");
+    if (filedest == NULL || filedest->fp == NULL || filedest->consistenciaDoArquivo == '0') return 0;
     fileindice = openfile(filenameindice, "rb+");
-
-    if (filesrc == NULL || filesrc->fp == NULL || filesrc->consistenciaDoArquivo == '0' || filedest == NULL || filedest->fp == NULL || filedest->consistenciaDoArquivo == '0' || fileindice == NULL || fileindice->fp == NULL || fileindice->consistenciaDoArquivo == '0')
-    {
-      return 0;
-    }
+    if (fileindice == NULL || fileindice->fp == NULL || fileindice->consistenciaDoArquivo == '0') return 0;
+    
 
     header = readHeaderfromBIN(filedest);
 
-    Btreeheader = BtreeCreate(fileindice);
+    Btreeheader = BTreeReadHeader(fileindice);
 
     int cont = 0;
     int regnum = checkRegnum(filesrc->fp);
@@ -487,6 +486,25 @@ int main() {
     break;
   }
   case 18:{
+    scanf("%s", filenamesrc);
+    scanf("%s", filenamedest);
+    
+    filesrc = openfile(filenamesrc, "rb+");
+    if (filesrc == NULL || filesrc->fp == NULL || filesrc->consistenciaDoArquivo == '0')
+      return 0;
+    filedest = openfile(filenamedest, "wb+");
+
+    db = readDBfromBIN(filesrc);
+
+    db->header->nroRegRemovidos = 0;
+    qsort(db->Regdatabase, db->header->nroRegistros, sizeof(dataReg_t *), comparaRegistro);
+
+    db->header->status = '0';
+  
+    writeDB(filedest, db, 0);
+    closefile(filesrc);
+    closefile(filedest);
+    binarioNaTela(filenamedest);
     break;
   }
   case 19:{

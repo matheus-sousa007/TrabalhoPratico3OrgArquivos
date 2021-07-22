@@ -319,7 +319,7 @@ void printReg(regv_t registro) //	Dado um registro, imprimimos de acordo com o p
 	{
 		printf("campo com valor nulo\n");
 	}
-	printf("\n");
+	//printf("\n");
 	return;
 }
 void printBin(char*filename)// dado um arquivo binario imprimimpos todos seus registros nao removidos

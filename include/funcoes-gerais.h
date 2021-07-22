@@ -20,7 +20,7 @@ typedef struct s_file{
 void binarioNaTela(char *nomeArquivoBinario);
 void scan_quote_string(char *str);
 s_file_t *openfile(char *filename, char *openmode);
-void closefile(s_file_t *s_file);
+void closefile(s_file_t * s_file);
 
 
 #endif
