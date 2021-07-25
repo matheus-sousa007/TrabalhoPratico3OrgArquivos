@@ -438,7 +438,7 @@ int main() {
       return 0;
     }
 
-    char compVeiculo[20], compLinha[20];
+    char compVeiculo[20], compLinha[20];// Para esse trabalho usamos apenas o codLinha, então, este campo é irrelevante
     scanf("%s", compVeiculo);
     scanf("%s", compLinha);
 
@@ -476,7 +476,7 @@ int main() {
       filedest = openfile(filenamedest, "rb");
       header = readHeaderfromBIN(filedest);
     }
-    if (printado == 0)
+    if (printado == 0)// caso não tivermos printado nenhum registro...
     {
       printf("Registro inexistente.\n");
       return 0;
@@ -516,12 +516,12 @@ int main() {
       regv_t *registro = get_reg_bin(filesrc->fp); //coletamos o registro
       if (registro->removido == '1')
       {
-        RegReference = SearchInBTree(Btreeheader->noRaiz, registro->codLinha, fileindice);
-        if(RegReference != NIL){
+        RegReference = SearchInBTree(Btreeheader->noRaiz, registro->codLinha, fileindice);// pegamos o registro de referencia na BTree
+        if(RegReference != NIL){// se existir...
           fseek(filedest->fp, RegReference, SEEK_SET);
-          registroLinha = readRegfromBIN(filedest);
-          printReg(*registro);
-          printRegistro(header, registroLinha);
+          registroLinha = readRegfromBIN(filedest);//pegamos o registro no arq de dados
+          printReg(*registro);// printamos para o veiculo
+          printRegistro(header, registroLinha);// depois o linha
           printf("\n");
           free(registroLinha);
           registroLinha = NULL;
@@ -554,21 +554,21 @@ int main() {
     int regnum = checkRegnum(filesrc->fp);
     fseek(filesrc->fp, 175, SEEK_SET);
 
-    regv_t **binRAM = (regv_t **)malloc(regnum * sizeof(regv_t *));
+    regv_t **binRAM = (regv_t **)malloc(regnum * sizeof(regv_t *));//carregamos um vetor na ram para os dados só com o número de registros não removidos
 
     while (cont < regnum)
     {
       regv_t *registro = get_reg_bin(filesrc->fp); //coletamos o registro
       if (registro->removido == '1')               // é removido?
       {
-        binRAM[cont] = registro;
+        binRAM[cont] = registro;//coletamos o registro no vetor
         cont++;
       }
     }
 
     regv_t *temp;
 
-    for (int i = 0; i < regnum; i++)
+    for (int i = 0; i < regnum; i++)// sort básico afinal esse não é o intuito do código
     {
       for (int j = 0; j < regnum - 1; j++)
       {
@@ -581,7 +581,7 @@ int main() {
       }
     }
 
-    writeBinOrd(filedest->fp, binRAM, regnum);
+    writeBinOrd(filedest->fp, binRAM, regnum);//escrevemos e retornamos o Binario na tela
     binarioNaTela(filenamedest);
     break;
   }
@@ -594,16 +594,16 @@ int main() {
       return 0;
     filedest = openfile(filenamedest, "wb+");
 
-    db = readDBfromBIN(filesrc);
+    db = readDBfromBIN(filesrc);// carrregamos a database do arquivo binario
 
     db->header->nroRegRemovidos = 0;
-    qsort(db->Regdatabase, db->header->nroRegistros, sizeof(dataReg_t *), comparaRegistro);
+    qsort(db->Regdatabase, db->header->nroRegistros, sizeof(dataReg_t *), comparaRegistro);//sortamos com qsort os registros
 
-    db->header->status = '0';
+    db->header->status = '0';//setamos como instável
   
-    writeDB(filedest, db, 0);
+    writeDB(filedest, db, 0);//escrevemos
     closefile(filesrc);
-    closefile(filedest);
+    closefile(filedest);//fechamos
     binarioNaTela(filenamedest);
     break;
   }
@@ -620,10 +620,9 @@ int main() {
 
     char nomeVeiculoOrdenado[50] = "\0";
     char nomeLinhaOrdenado[50] = "\0";
-    
-    //  |          ||  |
-    // nomeveiculo.bin
 
+    // para padronizar o nome dos arquivos ordenados que serão gerados fazemos...
+              //        nomedoArquivo + "Ordenado" + "." + final do arquivo
     strncpy(nomeVeiculoOrdenado, filenamesrc, strlen(filenamesrc)- 4);
     strcat(nomeVeiculoOrdenado, "Ordenado");
     strncat(nomeVeiculoOrdenado, (filenamesrc + ((int)strlen(filenamesrc)) - 4), 4);
@@ -632,6 +631,7 @@ int main() {
     strcat(nomeLinhaOrdenado, "Ordenado");
     strncat(nomeLinhaOrdenado, (filenamedest + ((int)strlen(filenamedest)) - 4), 4);
 
+    // criamos ambos arquivos sortados do veiculo e do linha
     s_file_t *LinhaOrdenado = createSortedLinhaFile(filedest, nomeLinhaOrdenado);
 
     FILE *veiculoOrdenado = createSortedFile(filesrc->fp, nomeVeiculoOrdenado);
@@ -642,27 +642,27 @@ int main() {
     int printado = 0;
     fseek(veiculoOrdenado, 175, SEEK_SET);     //vamos para o começo dos registros
 
-    char ReadFlag = 1;
+    char ReadFlag = 1;// flag para que possamos saber se foi lida e evitar loops infinitos
     regv_t *reg = NULL;
 
-    while ((offset = ftell(LinhaOrdenado->fp)) && (registro = readRegfromBIN(LinhaOrdenado)) != NULL)
+    while ((offset = ftell(LinhaOrdenado->fp)) && (registro = readRegfromBIN(LinhaOrdenado)) != NULL)//enquanto temos registros no linha...
     {
       do{
-        if(reg == NULL || (reg != NULL && reg->codLinha <= registro->codLinha && ReadFlag)) reg = get_reg_bin(veiculoOrdenado); //coletamos o registro
-        if(registro != NULL && reg != NULL && registro->codLinha == reg->codLinha){
+        if(reg == NULL || (reg != NULL && reg->codLinha <= registro->codLinha && ReadFlag)) reg = get_reg_bin(veiculoOrdenado); //coletamos o registro do veiculo
+        if(registro != NULL && reg != NULL && registro->codLinha == reg->codLinha){// se for igual...
           printReg(*reg);
           printRegistro(header, registro);
           printf("\n");
           printado++;
         }
-        ReadFlag = 1;
-      } while (registro != NULL && reg != NULL && reg->codLinha <= registro->codLinha);
-      free(registro);
+        ReadFlag = 1;// foi lido
+      } while (registro != NULL && reg != NULL && reg->codLinha <= registro->codLinha);//enquanto o registro->codLinha no linha for maior que o registro->codLinha no veiculo
+      free(registro);                                                                           //coletamos do veiculo os registros
       ReadFlag = 0;          
     }
     if (printado == 0)
     {
-      printf("Registro inexistente.\n");
+      printf("Registro inexistente.\n");//nao foi printado nada
       return 0;
     }
 

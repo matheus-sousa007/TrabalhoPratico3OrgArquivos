@@ -602,6 +602,8 @@ void printRegistro(header_t *header, dataReg_t *registro){
   }
 }
 
+// Função de ComparaRegistro para o Qsort
+
 int comparaRegistro(const void *elem1, const void *elem2)
 {
   int CodLinharegistro1 = ((dataReg_t *) elem1)->codLinha;
@@ -612,21 +614,17 @@ int comparaRegistro(const void *elem1, const void *elem2)
 }
 
 s_file_t *createSortedLinhaFile(s_file_t *filesrc, char *filenamedest){
-  
+
+  // Abrindo o arquivo Ordenado  
   s_file_t *filedest = openfile(filenamedest, "wb+");
   if(filedest == NULL || filedest->fp == NULL) return NULL;
 
+  // Lendo do arquivo binário de origem
   db_t *db = readDBfromBIN(filesrc);
 
-  /*
-  for (int i = 0; i < db->header->nroRegistros; i++)
-  {
-    printf("CodLinha: %d\n", db->Regdatabase[i]->codLinha);
-  }
-  */
-
   db->header->nroRegRemovidos = 0;
-  //qsort(db->Regdatabase, db->header->nroRegistros, sizeof(dataReg_t *), comparaRegistro);
+
+   // Algoritmo de Ordenação Bubble Sort para ordenar registros
 
   dataReg_t *tmp = NULL;
 
@@ -642,6 +640,7 @@ s_file_t *createSortedLinhaFile(s_file_t *filesrc, char *filenamedest){
 
   db->header->status = '0';
 
+  // Escrita dos registros ordenados no arquivo filedest
   writeDB(filedest, db, 0);
   return filedest;
 }

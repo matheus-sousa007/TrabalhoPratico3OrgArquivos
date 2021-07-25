@@ -635,6 +635,7 @@ int writeBin(char* filenamecsv,char* filenamebin)
 	return 0;
 }
 
+// Escrita dos registros no arquivo de dados ordenado
 
 void writeBinOrd(FILE* fpOrd,regv_t** binRAM,int regnum)
 {
@@ -646,6 +647,7 @@ void writeBinOrd(FILE* fpOrd,regv_t** binRAM,int regnum)
 	char descLinh[26] = "Linha associada ao veiculo";
 	char descMod[17] = "Modelo do veiculo";
 	char descCat[20] = "Categoria do veiculo";
+	// Escrita do header
 	h.status = '1';
 	h.byteProxReg = 175;
 	h.nroRegRemovidos = 0;
@@ -660,7 +662,7 @@ void writeBinOrd(FILE* fpOrd,regv_t** binRAM,int regnum)
 	fwrite(descLinh, 26, 1, fpOrd);
 	fwrite(descMod, 17, 1, fpOrd);
 	fwrite(descCat, 20, 1, fpOrd);
-
+	// Escrita dos registros
 	int count = 0;
 	while (count<regnum)
 	{
@@ -673,7 +675,7 @@ void writeBinOrd(FILE* fpOrd,regv_t** binRAM,int regnum)
 }
 
 FILE *createSortedFile(FILE *filesrc, char *filenamedest){
-	
+	// Abrindo o arquivo ordenado
 	FILE *filedest = fopen(filenamedest, "wb+");
 	if(filedest == NULL) return NULL;
 
@@ -683,6 +685,7 @@ FILE *createSortedFile(FILE *filesrc, char *filenamedest){
 
 	regv_t **binRAM = (regv_t **)malloc(regnum * sizeof(regv_t *));
 
+	// Resgatando os registros do arquivo de dados desordenado
 	while (cont < regnum)
 	{
 		regv_t *registro = get_reg_bin(filesrc); //coletamos o registro
@@ -693,6 +696,7 @@ FILE *createSortedFile(FILE *filesrc, char *filenamedest){
 		}
 	}
 
+	// Algoritmo de Ordenação Bubble Sort para ordenação dos registros
 	regv_t *temp;
 
 	for (int i = 0; i < regnum; i++)
@@ -707,6 +711,7 @@ FILE *createSortedFile(FILE *filesrc, char *filenamedest){
 			}
 		}
 	}
+	// Escrita dos registros ordenados no arquivo destino
 	writeBinOrd(filedest, binRAM, regnum);
 	return filedest;
 }
