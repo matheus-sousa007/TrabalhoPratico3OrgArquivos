@@ -438,7 +438,7 @@ int main() {
       return 0;
     }
 
-    char compVeiculo[20], compLinha[20];
+    char compVeiculo[20], compLinha[20];// Para esse trabalho usamos apenas o codLinha, então, este campo é irrelevante
     scanf("%s", compVeiculo);
     scanf("%s", compLinha);
 
@@ -476,7 +476,7 @@ int main() {
       filedest = openfile(filenamedest, "rb");
       header = readHeaderfromBIN(filedest);
     }
-    if (printado == 0)
+    if (printado == 0)// caso não tivermos printado nenhum registro...
     {
       printf("Registro inexistente.\n");
       return 0;
