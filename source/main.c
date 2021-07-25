@@ -3,9 +3,6 @@
 #include "../include/linha.h"
 #include "../include/veiculo.h"
 #include "../include/convertePrefixo.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 
 /*
             TRABALHO DESENVOLVIDO PARA A DISCIPLINA SCC-0215 ORGANIZACAO DE
@@ -430,6 +427,63 @@ int main() {
     break;
   }
   case 15:{
+    scanf("%s", filenamesrc);
+    scanf("%s", filenamedest);
+
+    filesrc = openfile(filenamesrc, "rb");
+    filedest = openfile(filenamedest, "rb");
+
+    if (filesrc == NULL || filesrc->fp == NULL || filedest == NULL || filedest->fp == NULL || filesrc->EmptyFile == '1' || filedest->EmptyFile == '1')
+    {
+      return 0;
+    }
+
+    char compVeiculo[20], compLinha[20];
+    scanf("%s", compVeiculo);
+    scanf("%s", compLinha);
+
+    header = readHeaderfromBIN(filedest);
+
+    int printado = 0;
+    int cont = 0;
+    int regnum = checkRegnum(filesrc->fp); // quantos registros não removidos?
+    fseek(filesrc->fp, 175, SEEK_SET);     //vamos para o começo dos registros
+
+    while (cont < regnum)
+    {
+      regv_t *reg = get_reg_bin(filesrc->fp); //coletamos o registro
+
+      if (reg->removido == '1') // é removido?
+      {
+        while ((offset = ftell(filedest->fp)) && (registro = readRegfromBIN(filedest)) != NULL)
+        { // enquanto temos registros...
+          if (registro->removido == '1')
+          {
+            if (registro->codLinha == reg->codLinha)
+            {
+              //printar as propriedades do veiculo depois a propriedades do linha
+              printReg(*reg);
+              printRegistro(header, registro);
+              printado++;
+            }
+          }
+          free(registro);
+        }
+        free(reg);
+        cont++;
+      }
+      closefile(filedest);
+      filedest = openfile(filenamedest, "rb");
+      header = readHeaderfromBIN(filedest);
+    }
+    if (printado == 0)
+    {
+      printf("Registro inexistente.\n");
+      return 0;
+    }
+
+    closefile(filesrc);
+    closefile(filedest);
     break;
   }
   case 16:{
@@ -483,6 +537,52 @@ int main() {
     break;
   }
   case 17:{
+    scanf("%s", filenamesrc);
+
+    filesrc = openfile(filenamesrc, "rb");
+
+    if (filesrc == NULL || filesrc->fp == NULL || filesrc->EmptyFile == '1')
+    {
+      return 0;
+    }
+
+    scanf("%s", filenamedest);
+
+    filedest = openfile(filenamedest, "wb+");
+
+    int cont = 0;
+    int regnum = checkRegnum(filesrc->fp);
+    fseek(filesrc->fp, 175, SEEK_SET);
+
+    regv_t **binRAM = (regv_t **)malloc(regnum * sizeof(regv_t *));
+
+    while (cont < regnum)
+    {
+      regv_t *registro = get_reg_bin(filesrc->fp); //coletamos o registro
+      if (registro->removido == '1')               // é removido?
+      {
+        binRAM[cont] = registro;
+        cont++;
+      }
+    }
+
+    regv_t *temp;
+
+    for (int i = 0; i < regnum; i++)
+    {
+      for (int j = 0; j < regnum - 1; j++)
+      {
+        if (binRAM[j]->codLinha > binRAM[j + 1]->codLinha)
+        {
+          temp = binRAM[j];
+          binRAM[j] = binRAM[j + 1];
+          binRAM[j + 1] = temp;
+        }
+      }
+    }
+
+    writeBinOrd(filedest->fp, binRAM, regnum);
+    binarioNaTela(filenamedest);
     break;
   }
   case 18:{
@@ -508,6 +608,66 @@ int main() {
     break;
   }
   case 19:{
+    scanf("%s", filenamesrc);
+    scanf("%s", filenamedest);
+
+    filesrc = openfile(filenamesrc, "rb+");
+    if (filesrc == NULL || filesrc->fp == NULL || filesrc->consistenciaDoArquivo == '0')
+      return 0;
+    filedest = openfile(filenamedest, "rb+");
+    if (filedest == NULL || filedest->fp == NULL || filedest->consistenciaDoArquivo == '0')
+      return 0;
+
+    char nomeVeiculoOrdenado[50] = "\0";
+    char nomeLinhaOrdenado[50] = "\0";
+    
+    //  |          ||  |
+    // nomeveiculo.bin
+
+    strncpy(nomeVeiculoOrdenado, filenamesrc, strlen(filenamesrc)- 4);
+    strcat(nomeVeiculoOrdenado, "Ordenado");
+    strncat(nomeVeiculoOrdenado, (filenamesrc + ((int)strlen(filenamesrc)) - 4), 4);
+
+    strncpy(nomeLinhaOrdenado, filenamedest, strlen(filenamedest) - 4);
+    strcat(nomeLinhaOrdenado, "Ordenado");
+    strncat(nomeLinhaOrdenado, (filenamedest + ((int)strlen(filenamedest)) - 4), 4);
+
+    s_file_t *LinhaOrdenado = createSortedLinhaFile(filedest, nomeLinhaOrdenado);
+
+    FILE *veiculoOrdenado = createSortedFile(filesrc->fp, nomeVeiculoOrdenado);
+    
+    fseek(LinhaOrdenado->fp, 0, SEEK_SET);
+
+    header = readHeaderfromBIN(LinhaOrdenado);
+    int printado = 0;
+    fseek(veiculoOrdenado, 175, SEEK_SET);     //vamos para o começo dos registros
+
+    char ReadFlag = 1;
+    regv_t *reg = NULL;
+
+    while ((offset = ftell(LinhaOrdenado->fp)) && (registro = readRegfromBIN(LinhaOrdenado)) != NULL)
+    {
+      do{
+        if(reg == NULL || (reg != NULL && reg->codLinha <= registro->codLinha && ReadFlag)) reg = get_reg_bin(veiculoOrdenado); //coletamos o registro
+        if(registro != NULL && reg != NULL && registro->codLinha == reg->codLinha){
+          printReg(*reg);
+          printRegistro(header, registro);
+          printf("\n");
+          printado++;
+        }
+        ReadFlag = 1;
+      } while (registro != NULL && reg != NULL && reg->codLinha <= registro->codLinha);
+      free(registro);
+      ReadFlag = 0;          
+    }
+    if (printado == 0)
+    {
+      printf("Registro inexistente.\n");
+      return 0;
+    }
+
+    fclose(veiculoOrdenado);
+    closefile(LinhaOrdenado);
     break;
   }
   default:

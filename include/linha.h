@@ -55,5 +55,5 @@ dataReg_t *readRegfromStdin();
 void writeReg(s_file_t *binFile, dataReg_t *reg);
 void writeHeader(header_t *header, s_file_t *binFile);
 int comparaRegistro(const void *elem1, const void *elem2);
-
+s_file_t *createSortedLinhaFile(s_file_t *filesrc, char *filenamedest);
 #endif

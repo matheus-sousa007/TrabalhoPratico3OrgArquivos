@@ -192,7 +192,7 @@ regv_t scanReg(FILE* fp)	//	dado um ponteiro para um csv na posição correta, l
 int insertBin(regv_t registro,FILE*fp)
 {
 	setStatus(0,fp);									//status 0 pois estamos mexendo no bin
-
+    
 
 	int64_t offset = checkOffset(fp);					//olhamos o offset
 	int regnum = checkRegnum(fp);						//olhamos o numero de registros
@@ -200,7 +200,6 @@ int insertBin(regv_t registro,FILE*fp)
 
 
 	fseek(fp,offset,SEEK_SET);							//pelo offset sabemos onde colocar o proximo registro
-	registro.tamanhoRegistro-=5;
 	fwrite(&registro.removido,1,1,fp);					//primeiro o removido
 	fwrite(&registro.tamanhoRegistro,4,1,fp);			//depois o tamanho do registro
 	fwrite(registro.prefixo,5,1,fp);					//prefixo
@@ -234,10 +233,15 @@ int countLines(FILE*fp)// funcao para contar as linhas de um csv
 }
 regv_t *get_reg_bin(FILE* fp)// dado um ponteiro para um arquivo binario na pos certa, retornamos o registro contido na mesma.
 {
+	char notEOF = 0;
 	regv_t *registro = (regv_t*)malloc(sizeof(regv_t));
-	fread(&registro->removido,1,1,fp);//			aqui lemos normalmente os campos de tamanho fixo 
-	fread(&registro->tamanhoRegistro,4,1,fp);//			|	|	|	|	|
-	fread(&registro->prefixo,5,1,fp);//				V	V	V	V	V
+	notEOF = fread(&registro->removido,1,1,fp);//			aqui lemos normalmente os campos de tamanho fixo
+	if(!notEOF){
+		free(registro);
+		return NULL;
+	}
+	fread(&registro->tamanhoRegistro, 4, 1, fp); //			|	|	|	|	|
+	fread(&registro->prefixo, 5, 1, fp);		  //				V	V	V	V	V
 	fread(&registro->data,10,1,fp);
 	fread(&registro->quantidadeLugares,4,1,fp);
 	fread(&registro->codLinha,4,1,fp);
@@ -629,4 +633,80 @@ int writeBin(char* filenamecsv,char* filenamebin)
 	fclose(fp_csv);// idem
 	binarioNaTela(filenamebin);
 	return 0;
+}
+
+
+void writeBinOrd(FILE* fpOrd,regv_t** binRAM,int regnum)
+{
+	rewind(fpOrd);
+	headv_t h;
+	char descPr[18] = "Prefixo do veiculo";
+	char descDat[35] = "Data de entrada do veiculo na frota";
+	char descLug[42] = "Quantidade de lugares sentados disponiveis";
+	char descLinh[26] = "Linha associada ao veiculo";
+	char descMod[17] = "Modelo do veiculo";
+	char descCat[20] = "Categoria do veiculo";
+	h.status = '1';
+	h.byteProxReg = 175;
+	h.nroRegRemovidos = 0;
+	h.nroRegistros = 0;
+	fwrite(&h.status,1,1,fpOrd);
+	fwrite(&h.byteProxReg,8,1,fpOrd);
+	fwrite(&h.nroRegistros,4,1,fpOrd);
+	fwrite(&h.nroRegRemovidos,4,1,fpOrd);
+	fwrite(descPr,18,1,fpOrd);
+	fwrite(descDat, 35, 1, fpOrd);
+	fwrite(descLug, 42, 1, fpOrd);
+	fwrite(descLinh, 26, 1, fpOrd);
+	fwrite(descMod, 17, 1, fpOrd);
+	fwrite(descCat, 20, 1, fpOrd);
+
+	int count = 0;
+	while (count<regnum)
+	{
+		insertBin(*binRAM[count],fpOrd);
+		count++;
+	}
+	
+//	fclose(fpOrd);
+	return;
+}
+
+FILE *createSortedFile(FILE *filesrc, char *filenamedest){
+	
+	FILE *filedest = fopen(filenamedest, "wb+");
+	if(filedest == NULL) return NULL;
+
+	int cont = 0;
+	int regnum = checkRegnum(filesrc);
+	fseek(filesrc, 175, SEEK_SET);
+
+	regv_t **binRAM = (regv_t **)malloc(regnum * sizeof(regv_t *));
+
+	while (cont < regnum)
+	{
+		regv_t *registro = get_reg_bin(filesrc); //coletamos o registro
+		if (registro->removido == '1')				 // é removido?
+		{
+			binRAM[cont] = registro;
+			cont++;
+		}
+	}
+
+	regv_t *temp;
+
+	for (int i = 0; i < regnum; i++)
+	{
+		for (int j = 0; j < regnum - 1; j++)
+		{
+			if (binRAM[j]->codLinha > binRAM[j + 1]->codLinha)
+			{
+				temp = binRAM[j];
+				binRAM[j] = binRAM[j + 1];
+				binRAM[j + 1] = temp;
+			}
+		}
+	}
+	writeBinOrd(filedest, binRAM, regnum);
+	return filedest;
 }

@@ -610,3 +610,39 @@ int comparaRegistro(const void *elem1, const void *elem2)
   if(CodLinharegistro1 > CodLinharegistro2) return -1;
   return 0;
 }
+
+s_file_t *createSortedLinhaFile(s_file_t *filesrc, char *filenamedest){
+  
+  s_file_t *filedest = openfile(filenamedest, "wb+");
+  if(filedest == NULL || filedest->fp == NULL) return NULL;
+
+  db_t *db = readDBfromBIN(filesrc);
+
+  /*
+  for (int i = 0; i < db->header->nroRegistros; i++)
+  {
+    printf("CodLinha: %d\n", db->Regdatabase[i]->codLinha);
+  }
+  */
+
+  db->header->nroRegRemovidos = 0;
+  //qsort(db->Regdatabase, db->header->nroRegistros, sizeof(dataReg_t *), comparaRegistro);
+
+  dataReg_t *tmp = NULL;
+
+  for(int i = 0; i < db->header->nroRegistros; i++){
+    for(int j = 0; j < db->header->nroRegistros - 1; j++){
+      if(db->Regdatabase[j]->codLinha > db->Regdatabase[j+1]->codLinha){
+        tmp = db->Regdatabase[j];
+        db->Regdatabase[j] = db->Regdatabase[j+1];
+        db->Regdatabase[j+1] = tmp;
+      }
+    }
+  }
+
+  db->header->status = '0';
+
+  writeDB(filedest, db, 0);
+  return filedest;
+}
+

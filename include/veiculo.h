@@ -31,10 +31,12 @@ int checkRegnum(FILE*fp);
 void printReg(regv_t registro);
 int getReg(regv_t *registro);
 int insertBin(regv_t registro,FILE*fp);
+void writeBinOrd(FILE* fpOrd,regv_t** binRAM,int regnum);
 int64_t checkOffset(FILE*fp);
 int writeBin(char* filenamecsv,char* filenamebin);
 int insert_num_reg(int num_ins,char*filenamebin);
 void printBin(char*filename);
 int searchPrint(char* filename, char* campo);
+FILE *createSortedFile(FILE *filesrc, char *filenamedest);
 
 #endif
